@@ -1,0 +1,311 @@
+/*通勤问题：
+
+街区编号1到n.
+
+步行从街区s至s + 1 耗时 1 分钟.
+
+乘坐魔法电车从s到2s 耗时 2 分钟.
+
+如何从1旅行到n，使总耗时最少?
+
+必做：利用A*算法求解该问题，提交源码(.py)和搜出的最佳路径、代价截图。
+
+选做1：设置较大的n，对比A*算法和UCS的运行时间并分析。*/
+
+package footOrTram;
+
+import java.util.ArrayList;
+import java.util.Scanner;
+import java.util.Stack;
+
+public class text {
+	public static class point {
+		private int cost;
+		private int parent;
+		public int num;
+		public int F;
+		public int G;
+		public boolean visited;
+
+		public point() {
+			cost = -1;
+			parent = -1;
+			num = -1;// p角标
+			F = -1;
+			G = -1;
+			visited = false;
+		}
+	}
+
+	public static int forList(ArrayList<point> a) {// 寻找cost最小的数
+		int minCost = -1;// 记录最小cost
+		int min = -1;// 记录最小cost对应位置
+		int num1 = -1;// 记录遍历个数
+
+		for (point temp : a) {
+			num1 += 1;
+			if (minCost != -1) {
+				if (temp.cost < minCost) {
+					minCost = temp.cost;
+					min = num1;
+
+				}
+			} else {// 记录首个
+				minCost = temp.cost;
+				min = num1;
+			}
+			// System.out.println("num1:"+num1);
+		}
+		// System.out.println("min:"+min);
+		return min;// 返回位置
+	}
+
+	// 寻找F(到目标节点代价)最小的数
+	public static int forList2(ArrayList<point> a) {// 返回最小F对应角标
+		int minG = -1;// 记录最小cost
+		int min = -1;// 记录最小cost对应位置
+		int num1 = -1;// 记录遍历个数
+
+		for (point temp : a) {
+			num1 += 1;
+			if (minG != -1) {
+				if (temp.G < minG) {
+					minG = temp.G;
+					min = num1;
+				}
+			} else {// 记录首个
+				minG = temp.G;
+				min = num1;
+			}
+			// System.out.println("num1:"+num1);
+		}
+		// System.out.println("min:"+min);
+		return min;// 返回位置
+	}
+
+	// now为城市编号 计算F
+	public static int F(int now, int n) {// 计算F 估价
+// 		方法一：		
+		int value = 0;
+		int target = n;
+		while (target > now) {
+			if (target % 2 == 0 && target / 2 >= now) {
+				if (target / 2 == now && target - 1 == now) {
+					value++;
+					break;
+				}
+				value += 2;
+				target /= 2;
+			} else {
+				target -= 1;
+				value += 1;
+			}
+		}
+		return value;
+		
+//		方法二：UCS改造 逆运算
+//		point []p=new point[n];
+//		ArrayList<point> open = new ArrayList<point>();
+//		for(int i = 0;i < n;i++) {
+//			p[i]=new point();
+//			p[i].num = i;//num角标
+//		}
+//		
+//		p[n-1].F = 0;
+//		open.add(p[n-1]);
+//		
+//		while(open.size() != 0) {
+//			int i = forList2(open);
+//			point now1 = open.get(i);
+//			
+//			int r = now1.num+1;//城市编号
+//			int b =now1.num;//角标
+//			
+//			if(r == now) {//终点
+//				break;
+//			}
+//				
+//			else {//不在终点
+//				if(r-1 >= now) {
+//					if(p[b-1].parent == -1 || p[b-1].F > p[b].F+1) {
+//						p[b-1].F = p[b].F+1;
+//						p[b-1].parent = b;
+//						//System.out.println("city"+r+":"+p[b+1].cost);
+//						open.add(p[b-1]);
+//					}
+//				}
+//				
+//				if(r/2 >= now & r%2 == 0) {
+//					if(p[r/2-1].parent == -1 || p[r/2-1].F > p[b].F+2) {
+//						p[r/2-1].F = p[b].F+2;
+//						p[r/2-1].parent = b;
+//						open.add(p[r/2-1]);
+//						//int city = r*2-1;
+//						//System.out.println("city"+city+":"+p[r*2-1].cost);
+//					}
+//				}
+//				open.remove(i);
+//			}
+//		}
+//		return p[now-1].F;
+	}
+
+	// UCS
+	public static int UCS(int n) {// UCS
+		long startTime=System.currentTimeMillis();
+		point[] p = new point[n];
+		ArrayList<point> open = new ArrayList<point>();
+		for (int i = 0; i < n; i++) {
+			p[i] = new point();
+			p[i].num = i;
+		}
+
+		p[0].cost = 0;
+		open.add(p[0]);
+
+		while (open.size() != 0) {
+			int i = forList(open);
+			point now = open.get(i);
+			now.visited = true;
+			int r = now.num + 1;// 城市编号
+			int b = now.num;// 角标
+
+			if (r == n) {// 终点
+				break;
+			}
+
+			else {// 不在终点
+				if (r + 1 <= n && p[b + 1].visited == false) {
+					if (p[b + 1].parent == -1 || p[b + 1].cost > p[b].cost + 1) {
+						p[b + 1].cost = p[b].cost + 1;
+						// System.out.println("city"+r+":"+p[b+1].cost);
+						if (p[b + 1].parent == -1) {
+							open.add(p[b + 1]);
+						}
+						p[b + 1].parent = b;
+					}
+				}
+
+				if (r * 2 <= n && p[r * 2 - 1].visited == false) {
+					if (p[r * 2 - 1].parent == -1 || p[r * 2 - 1].cost > p[b].cost + 2) {
+						p[r * 2 - 1].cost = p[b].cost + 2;
+						if (p[r * 2 - 1].parent == -1) {
+							open.add(p[r * 2 - 1]);
+						}
+						p[r * 2 - 1].parent = b;
+						// int city = r*2-1;
+						// System.out.println("city"+city+":"+p[r*2-1].cost);
+					}
+				}
+				open.remove(i);
+			}
+		}
+		
+		long endTime=System.currentTimeMillis();
+		float excTime=(float)(endTime-startTime)/1000;
+		System.out.println("执行时间："+excTime+"s");
+		route(p, n);
+		return p[n - 1].cost;
+	}
+
+	// aStar
+	public static void route(point p[], int n) {// 显示路径
+		int route[] = new int[n];
+		int num = 1;// 经过路程
+		route[0] = n;
+		int i = p[n - 1].parent;
+		while (i != -1) {
+			route[num] = i + 1;
+			num += 1;
+			i = p[i].parent;
+		}
+		System.out.print("route:");
+		for (int m = num - 1; m >= 0; m--) {
+			System.out.print(route[m] + " ");
+		}
+		System.out.println();
+	}
+
+	public static int aStar(int n) {
+		long startTime=System.currentTimeMillis();
+		
+		point[] p = new point[n];
+		ArrayList<point> open = new ArrayList<point>();
+		for (int i = 0; i < n; i++) {
+			p[i] = new point();
+			p[i].num = i;// num：p点角标
+		}
+
+		p[0].F = F(1, n);
+		p[0].cost = 0;
+		p[0].G = p[0].F + p[0].cost;
+		open.add(p[0]);
+		Stack<point> road = new Stack<point>();
+		while (open.size() != 0) {
+			int i = forList2(open);
+			point now = open.get(i);
+			//System.out.println("i:"+(now.num+ 1));
+			road.add(now);
+			open.remove(i);
+			now.visited = true;
+			int r = now.num + 1;// 城市编号
+			int b = now.num;// 角标 A
+			if (r == n) {// 终点
+				break;
+			}
+
+			else {//不在终点
+				if(r+1 <= n && p[b+1].visited == false) {
+					int k = F(r+1,n);
+					if(p[b+1].parent == -1||p[b+1].G > p[b].cost+1+k) {
+						p[b+1].F = k;
+						p[b+1].cost = p[b].cost + 1;
+						p[b+1].G = p[b+1].F+p[b+1].cost;
+						if(p[b+1].parent == -1) {
+							open.add(p[b+1]);
+						}
+						p[b+1].parent = b;
+					}
+				}
+				if(r*2 <= n && p[r*2-1].visited == false) {
+						int k = F(r*2,n);
+						if(p[r*2-1].parent == -1||p[r*2-1].G > p[b].cost+2+k) {
+							p[r*2-1].F = k;
+							p[r*2-1].cost = p[b].cost + 2;
+							p[r*2-1].G = p[r*2-1].F+p[r*2-1].cost;
+							if(p[r*2-1].parent == -1) {
+								open.add(p[r*2-1]);
+							}
+							p[r*2-1].parent = b;
+						}
+					}
+			}
+		}
+	
+		long endTime=System.currentTimeMillis();
+		float excTime=(float)(endTime-startTime)/1000;
+		System.out.println("执行时间："+excTime+"s");
+		
+		route(p, n);
+		return p[n - 1].cost;
+	}
+
+	// 测试
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+
+		Scanner input = new Scanner(System.in);
+		System.out.println("请输入n：");
+		int n = input.nextInt();
+
+		System.out.println("UCS:");
+		int num1 = UCS(n);
+		System.out.println("cost:" + num1);
+
+		System.out.println();
+
+		System.out.println("A*:");
+		int num2 = aStar(n);
+		System.out.println("cost:" + num2);
+	}
+}
